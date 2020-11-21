@@ -1,79 +1,87 @@
 <template>
   <div class="container">
-    <el-form label-width="60px">
-      <el-form-item label="公司名">
-        <el-input
-          size="small"
-          style="width: 260px"
-          v-model="teamName"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="图标">
-        <el-upload
-          action="http://192.168.5.7:8080/file/upload"
-          list-type="picture-card"
-          :show-file-list="true"
-          :limit="1"
-          :on-success="onSuccess"
-          :file-list="fileList"
+    <div class="content-body">
+      <p class="tt">答题记录</p>
+      <el-table :data="tableData" height="calc(100% - 30px)" border>
+        <el-table-column
+          label="ID"
+          prop="id"
+          align="center"
+          width="130"
+        ></el-table-column>
+        <el-table-column
+          label="作文题目"
+          prop="title"
+          align="center"
+        ></el-table-column>
+        <el-table-column
+          label="字数限制"
+          prop="fontLimit"
+          align="center"
+          width="150"
+        ></el-table-column>
+        <el-table-column
+          label="时间限制"
+          prop="timeLimit"
+          align="center"
+          width="190"
+        ></el-table-column>
+        <el-table-column
+          label="作文要求"
+          prop="desc"
+          align="center"
+          width="300"
+        ></el-table-column>
+        <el-table-column
+          label="回答状态"
+          prop="state"
+          align="center"
+          width="300"
         >
-          <i class="el-icon-plus"></i>
-        </el-upload>
-      </el-form-item>
-      <el-form-item>
-        <el-button size="small" type="primary" @click="submit">确定</el-button>
-      </el-form-item>
-    </el-form>
+          <template slot-scope="scope">
+            {{ scope.row.state | showState }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </template>
 
 <script>
-import { loadInfo, editInfo } from "@/api/message.js";
-import { mapState } from "vuex";
+import { getStorage } from "@/utils/localStorage.js";
 export default {
   data() {
     return {
-      teamName: "",
-      avatarUrl: "",
-      fileList: []
+      tableData: []
     };
   },
-  computed: {
-    ...mapState("user", ["teamId", "id"])
-  },
   methods: {
-    onSuccess(res, file) {
-      this.avatarUrl = res.data.url;
-      console.log(file);
-    },
-    submit() {
-      editInfo({
-        currentUserId: this.id,
-        teamId: this.teamId,
-        url: this.avatarUrl,
-        teamName: this.teamName
-      }).then(res => {
-        if (res.code == 0) {
-          this.$message.success("修改成功");
-        }
-      });
-    },
-    getInfo() {
-      loadInfo({ teamId: this.teamId }).then(res => {
-        if (res.code == 0) {
-          console.log(res);
-          const { avatarUrl, teamName } = res.data;
-          this.teamName = teamName;
-          this.avatarUrl = avatarUrl;
-          this.fileList.push({ url: avatarUrl });
-        }
-      });
+    getList() {
+      this.tableData = getStorage("compositionList").filter(
+        item => item.state == 2
+      );
+    }
+  },
+  filters: {
+    showState(value) {
+      return value == 1 ? "未答题" : "已答题";
     }
   },
   created() {
-    this.getInfo();
+    this.getList();
+    // this.getList();
+    // 向localstorage里注入数据
   }
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.content-body {
+  height: 100%;
+}
+.tt {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+</style>

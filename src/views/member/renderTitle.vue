@@ -17,11 +17,10 @@
           </div>
         </div>
         <div style="line-height: 30px; margin-bottom: 20px; margin-top: 40px">
-          题目：你的朋友魏东获得了一笔到美国留学一年的奖学金。他去的那所学校碰巧有你一位好朋友Dick。你写信把魏东介绍给Dick，希望他能帮助、照顾魏东，愿他们也成为好朋友。
+          题目：{{ currObj.title }}
         </div>
-        <div>
-          字数限制： 80个单词
-        </div>
+        <div>字数限制： {{ currObj.fontLimit }}个单词</div>
+        <div style="margin-top: 30px">题目要求： {{ currObj.desc }}个单词</div>
         <div class="content11">
           <p>答题区域</p>
           <el-input type="textarea" :rows="12" v-model="content"></el-input>
@@ -39,6 +38,7 @@
 import { mapState } from "vuex";
 import FlipCountdown from "vue2-flip-countdown";
 import Moment from "moment";
+import { getStorage, setStorage } from "@/utils/localStorage.js";
 export default {
   computed: {
     ...mapState("user", ["name", "callTime"])
@@ -47,15 +47,19 @@ export default {
   data() {
     return {
       limitTime: null,
-      content: ""
+      content: "",
+      currObj: null
     };
   },
   created() {
     console.log(this.callTime);
+
+    var list = getStorage("compositionList");
+    this.currObj = list.filter(item => item.id == this.$route.query.id)[0];
     // 获取当前时间时间戳
     if (!this.callTime) {
       var timestamp = new Date().valueOf();
-      var wantTime = timestamp + 1800000;
+      var wantTime = timestamp + this.currObj.timeLimit * 60 * 1000;
       const limitTime = Moment(wantTime).format("YYYY-MM-DD HH:mm:ss");
       this.$store.dispatch("user/setCallTime", limitTime);
       localStorage.setItem("flag", true);
@@ -90,6 +94,14 @@ export default {
         this.$message.error("请认真答题");
         return false;
       }
+      this.currObj.state = 2;
+      var list = getStorage("compositionList");
+      list.forEach((item, index) => {
+        if (item.id == this.$route.query.id) {
+          list.splice(index, 1, this.currObj);
+        }
+      });
+      setStorage("compositionList", list);
       this.$router.push({ name: "codeRusult" });
     },
     back() {

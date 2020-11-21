@@ -44,7 +44,7 @@ export default {
         title: {
           text: "智适应系统用户分布图"
         },
-        backgroundColor: "#708090",
+        backgroundColor: "#ffffff",
         tooltip: {}, // 鼠标移到图里面的浮动提示框
         dataRange: {
           show: false,

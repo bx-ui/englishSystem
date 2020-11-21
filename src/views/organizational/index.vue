@@ -32,7 +32,7 @@
           </el-row>
         </el-form>
       </div>
-      <el-table :data="tableData" height="calc(100% - 120px)" border>
+      <el-table :data="tableData" height="calc(100% - 80px)" border>
         <el-table-column
           label="ID"
           prop="id"
@@ -41,76 +41,72 @@
         ></el-table-column>
         <el-table-column
           label="作文题目"
-          prop="id"
+          prop="title"
           align="center"
-          width="190"
         ></el-table-column>
         <el-table-column
           label="字数限制"
-          prop="id"
+          prop="fontLimit"
           align="center"
           width="150"
         ></el-table-column>
         <el-table-column
-          label="具体内容"
-          prop="id"
+          label="时间限制"
+          prop="timeLimit"
           align="center"
+          width="190"
+        ></el-table-column>
+        <el-table-column
+          label="作文要求"
+          prop="desc"
+          align="center"
+          width="300"
         ></el-table-column>
         <el-table-column fixed="right" label="操作" width="140" align="center">
           <template slot-scope="scope">
             <el-button @click="edit(scope.row)" type="text" size="small"
-              >查看</el-button
+              >编辑</el-button
             >
-            <el-button type="text" size="small">编辑</el-button>
+            <el-button type="text" size="small" @click="del(scope.row)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
-
-      <div class="page-list">
-        <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="listQuery.pageIndex"
-          :page-sizes="[10, 20, 30, 40]"
-          :page-size="listQuery.pageSize"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-        >
-        </el-pagination>
-      </div>
     </div>
 
-    <chartOrg v-model="chartDialog" />
+    <chartOrg v-model="chartDialog" @refresh="refresh" :currObj="currObj" />
   </div>
 </template>
 
 <script>
-import { loadList, delDeport, delPosition } from "@/api/organizational";
 import { mapState } from "vuex";
 import chartOrg from "./components/chartOrg.vue";
+import { setStorage, getStorage } from "@/utils/localStorage.js";
 export default {
   components: {
     chartOrg
   },
   data() {
     return {
-      tableData: [{}],
-      listQuery: {
-        pageIndex: 1,
-        pageSize: 20,
-        departmentType: 1,
-        teamId: null
-      },
-      total: 0,
-      chartDialog: false
+      tableData: [],
+      content: "",
+      chartDialog: false,
+      currObj: null,
+      isSee: false
     };
   },
   computed: {
     ...mapState("user", ["name"])
   },
   methods: {
-    edit() {},
+    edit({ id }) {
+      var list = getStorage("compositionList");
+      this.currObj = list.filter(item => item.id == id)[0];
+      this.chartDialog = true;
+    },
     addTitle() {
+      this.currObj = null;
       this.chartDialog = true;
     },
     del({ id }) {
@@ -120,47 +116,73 @@ export default {
         type: "warning"
       }).then(
         () => {
-          if (this.listQuery.departmentType == 1) {
-            delDeport({ teamId: this.teamId, id, currentUserId: this.id }).then(
-              res => {
-                if (res.code == 0) {
-                  this.$message.success("删除成功");
-                  this.getList();
-                }
-              }
-            );
-          } else {
-            delPosition({
-              teamId: this.teamId,
-              id,
-              currentUserId: this.id
-            }).then(res => {
-              if (res.code == 0) {
-                this.$message.success("删除成功");
-                this.getList();
-              }
-            });
-          }
+          var list = getStorage("compositionList");
+          list.forEach((item, index) => {
+            if (item.id == id) {
+              list.splice(index, 1);
+            }
+          });
+          setStorage("compositionList", list);
+          this.getList();
+          this.$message.success("删除成功");
         },
         () => {}
       );
     },
+    refresh() {
+      this.getList();
+    },
     getList() {
-      if (this.content) {
-        this.listQuery.content = this.content;
-      } else {
-        delete this.listQuery.content;
-      }
-      loadList(this.listQuery).then(res => {
-        if (res.code == 0) {
-          this.tableData = res.data.records;
-          this.total = res.data.total;
-        }
+      this.tableData = getStorage("compositionList");
+    },
+    setList() {
+      return new Promise(resolve => {
+        var compositionList = [
+          {
+            id: 1,
+            title: "围绕感恩写一篇英语文章",
+            desc: "语法流程，字迹工整，不得使用真是姓名",
+            fontLimit: "100",
+            timeLimit: 30,
+            state: 1 // 1 没有答题过  2  答题过
+          },
+          {
+            id: 2,
+            title: "用英语给终南山爷爷写一篇作文",
+            desc: "语法流程，字迹工整，不得使用真是姓名",
+            fontLimit: "100",
+            timeLimit: 10,
+            state: 1 // 1 没有答题过  2  答题过
+          },
+          {
+            id: 3,
+            title: "用英语给正在法国读高中的李华写一篇文章",
+            desc: "语法流程，字迹工整，不得使用真是姓名",
+            fontLimit: "300",
+            timeLimit: 20,
+            state: 1 // 1 没有答题过  2  答题过
+          },
+          {
+            id: 4,
+            title: "用英语给正在法国读高中的李华写一篇文章",
+            desc: "语法流程，字迹工整，不得使用真是姓名",
+            fontLimit: "300",
+            timeLimit: 20,
+            state: 2 // 1 没有答题过  2  答题过
+          }
+        ];
+        if (!getStorage("compositionList"))
+          setStorage("compositionList", compositionList);
+        resolve();
       });
     }
   },
   created() {
-    this.getList();
+    this.setList().then(() => {
+      this.getList();
+    });
+    // this.getList();
+    // 向localstorage里注入数据
   }
 };
 </script>

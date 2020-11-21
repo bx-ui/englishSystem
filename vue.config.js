@@ -46,7 +46,7 @@ module.exports = {
     proxy: {
       // 代理 /dev-api/user/login 到 http://127.0.0.1:3000/user/login
       "/apis": {
-        target: `http://192.168.5.7:8080`,
+        target: `http://localhost:8088`,
         changeOrigin: true,
         pathRewrite: {
           "^/apis": ""
